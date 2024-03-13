@@ -1,0 +1,68 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'GCG_5254_MonthlyPurge.g2u
+'Trey Seddon
+'10/01/2018
+'For Dyna Holdings
+'This program will remove all records the GCG_5254_ClockIns table older than a month
+'Set to run once a month via the task scheduler
+
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.Data.DataTable.CreateFromSQL("tableClockInRecords", "Con", "select * from GCG_5254_ClockIns")
+
+V.Local.iCounter.Declare(Long)
+V.Local.dDate.Declare(Date)
+V.Local.iDiff.Declare(Long)
+F.Intrinsic.Control.For(V.Local.iCounter, 0, V.DataTable.tableClockInRecords.RowCount--, 1)
+	F.Intrinsic.Date.ConvertDString(V.DataTable.tableClockInRecords(V.Local.iCounter).Date!FieldValTrim, "YYYYMMDD", V.Local.dDate)
+	F.Intrinsic.Date.DateDiff("M", V.Local.dDate, V.Ambient.Date, V.Local.iDiff)
+	F.Intrinsic.Control.If(V.Local.iDiff, >, 0)
+		F.Data.DataTable.DeleteRow("tableClockInRecords", V.Local.iCounter)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCounter)
+
+F.Data.DataTable.SaveToDB("tableClockInRecords", "Con", "GCG_5254_ClockIns", "ID", 4)
+
+F.Data.DataTable.Close("tableClockInRecords")
+
+'Writing to error log file
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("{6}: Project:{0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}GAB Version: {5}",V.Ambient.ScriptPath,", " ,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion, V.Ambient.Now, V.Local.sError)
+    F.Intrinsic.Control.CallSub(CheckDir)
+    V.Local.sErrorPath.Declare(String)
+    V.Local.bExists.Declare(Boolean)
+    F.Intrinsic.String.Build("{0}\Custom\5254\GCG_5254_PurgeErrorLog.txt", V.Caller.GlobalDir, V.Local.sErrorPath)
+    F.Intrinsic.File.Exists(V.Local.sErrorPath, V.Local.bExists)
+    F.Intrinsic.Control.If(V.Local.bExists, =, False)
+		F.Intrinsic.File.String2File(V.Local.sErrorPath, V.Local.sError)
+    F.Intrinsic.Control.Else
+		F.Intrinsic.File.Append2FileNewLine(V.Local.sErrorPath, V.Local.sError)
+	F.Intrinsic.Control.EndIf
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.CheckDir.Start
+'Here check if the custom folder and folder for this project exists
+'If it doesn't, create it
+V.Local.bExists.Declare(Boolean)
+V.Local.sPath.Declare(String)
+F.Intrinsic.String.Build("{0}\Custom", V.Caller.GlobalDir, V.Local.sPath)
+F.Intrinsic.File.DirExists(V.Local.sPath, V.Local.bExists)
+
+F.Intrinsic.Control.If(V.Local.bExists, !=, True)
+	F.Intrinsic.File.CreateDir(V.Local.sPath)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Build("{0}\5254", V.Local.sPath, V.Local.sPath)
+F.Intrinsic.File.DirExists(V.Local.sPath, V.Local.bExists)
+
+F.Intrinsic.Control.If(V.Local.bExists, !=, True)
+	F.Intrinsic.File.CreateDir(V.Local.sPath)
+F.Intrinsic.Control.EndIf
+program.Sub.CheckDir.End
