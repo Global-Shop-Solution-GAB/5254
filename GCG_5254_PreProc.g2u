@@ -1,0 +1,428 @@
+Program.Sub.ScreenSU.Start
+Gui.FormSelectionScreen..Create
+Gui.FormSelectionScreen..Caption("Clock In Report")
+Gui.FormSelectionScreen..Size(4590,7305)
+Gui.FormSelectionScreen..MinX(0)
+Gui.FormSelectionScreen..MinY(0)
+Gui.FormSelectionScreen..Position(0,0)
+Gui.FormSelectionScreen..BackColor(-2147483633)
+Gui.FormSelectionScreen..MaxButton(False)
+Gui.FormSelectionScreen..MousePointer(0)
+Gui.FormSelectionScreen..Sizeable(False)
+Gui.FormSelectionScreen..Event(UnLoad,FormSelectionScreen_UnLoad)
+Gui.FormSelectionScreen.dateFrom.Create(DatePicker)
+Gui.FormSelectionScreen.dateFrom.Size(1935,285)
+Gui.FormSelectionScreen.dateFrom.Position(165,975)
+Gui.FormSelectionScreen.dateTo.Create(DatePicker)
+Gui.FormSelectionScreen.dateTo.Size(1935,285)
+Gui.FormSelectionScreen.dateTo.Position(2445,975)
+Gui.FormSelectionScreen.labelFrom.Create(Label,"From: ",True,570,270,0,165,750,True,0,"Arial",8,-2147483633,0)
+Gui.FormSelectionScreen.labelTo.Create(Label,"To: ",True,360,255,0,2445,750,True,0,"Arial",8,-2147483633,0)
+Gui.FormSelectionScreen.checkAllDates.Create(CheckBox)
+Gui.FormSelectionScreen.checkAllDates.Size(1080,360)
+Gui.FormSelectionScreen.checkAllDates.Position(1770,1290)
+Gui.FormSelectionScreen.checkAllDates.Caption("All Dates")
+Gui.FormSelectionScreen.checkAllDates.Event(Click,checkAllDates_Click)
+Gui.FormSelectionScreen.textEmployeeFrom.Create(TextBox,"",True,1215,300,0,405,2070,True,0,"Arial",8,-2147483643,1)
+Gui.FormSelectionScreen.labelEmployeeFrom.Create(Label,"From:",True,555,255,0,390,1875,True,0,"Arial",8,-2147483633,0)
+Gui.FormSelectionScreen.labelEmployeeTo.Create(Label,"To:",True,555,255,0,2460,1875,True,0,"Arial",8,-2147483633,0)
+Gui.FormSelectionScreen.textEmployeeTo.Create(TextBox,"",True,1215,300,0,2460,2070,True,0,"Arial",8,-2147483643,1)
+Gui.FormSelectionScreen.buttonFromBrowser.Create(Button)
+Gui.FormSelectionScreen.buttonFromBrowser.Size(405,375)
+Gui.FormSelectionScreen.buttonFromBrowser.Position(1650,2025)
+Gui.FormSelectionScreen.buttonFromBrowser.Caption("^")
+Gui.FormSelectionScreen.buttonFromBrowser.Event(Click,buttonFromBrowser_Click)
+Gui.FormSelectionScreen.buttonToBrowser.Create(Button)
+Gui.FormSelectionScreen.buttonToBrowser.Size(405,375)
+Gui.FormSelectionScreen.buttonToBrowser.Position(3705,2025)
+Gui.FormSelectionScreen.buttonToBrowser.Caption("^")
+Gui.FormSelectionScreen.buttonToBrowser.Event(Click,buttonToBrowser_Click)
+Gui.FormSelectionScreen.labelDateRange.Create(Label,"Date Range",True,1095,255,0,1740,480,True,2,"Arial",8,-2147483633,0)
+Gui.FormSelectionScreen.labelEmployeeSelection.Create(Label,"Employee Selection",True,1935,255,0,1440,1650,True,2,"Arial",8,-2147483633,0)
+Gui.FormSelectionScreen.gridEmployeeRanges.Create(GsGridControl)
+Gui.FormSelectionScreen.gridEmployeeRanges.Size(4530,3405)
+Gui.FormSelectionScreen.gridEmployeeRanges.Position(0,2820)
+Gui.FormSelectionScreen.gridEmployeeRanges.Event(RowCellClick,gridEmployeeRanges_RowCellClick)
+Gui.FormSelectionScreen.checkAllEmployees.Create(CheckBox)
+Gui.FormSelectionScreen.checkAllEmployees.Size(1560,360)
+Gui.FormSelectionScreen.checkAllEmployees.Position(1605,6240)
+Gui.FormSelectionScreen.checkAllEmployees.Caption("All Employees")
+Gui.FormSelectionScreen.checkAllEmployees.Event(Click,checkAllEmployees_Click)
+Gui.FormSelectionScreen.buttonAdd.Create(Button)
+Gui.FormSelectionScreen.buttonAdd.Size(990,375)
+Gui.FormSelectionScreen.buttonAdd.Position(1230,2400)
+Gui.FormSelectionScreen.buttonAdd.Caption("Add")
+Gui.FormSelectionScreen.buttonAdd.Event(Click,buttonAdd_Click)
+Gui.FormSelectionScreen.buttonRemove.Create(Button)
+Gui.FormSelectionScreen.buttonRemove.Size(990,375)
+Gui.FormSelectionScreen.buttonRemove.Position(2265,2400)
+Gui.FormSelectionScreen.buttonRemove.Caption("Remove")
+Gui.FormSelectionScreen.buttonRemove.Event(Click,buttonRemove_Click)
+Gui.FormSelectionScreen.buttonSubmit.Create(Button)
+Gui.FormSelectionScreen.buttonSubmit.Size(990,375)
+Gui.FormSelectionScreen.buttonSubmit.Position(1740,6615)
+Gui.FormSelectionScreen.buttonSubmit.Caption("Submit")
+Gui.FormSelectionScreen.buttonSubmit.Event(Click,buttonSubmit_Click)
+Gui.FormSelectionScreen.dropdownStatement.Create(DropDownList)
+Gui.FormSelectionScreen.dropdownStatement.Size(2070,330)
+Gui.FormSelectionScreen.dropdownStatement.Position(1230,90)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.bRowSelected.Declare(Boolean)
+V.Global.iBIRunID.Declare(Long)
+V.Global.iBILogID.Declare(Long)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'GCG_5254_Preproc.g2u
+'Trey Seddon
+'10/02/2018
+'For Dyna Holdings
+'This is the preprocessor for the clock in statement report
+'Puts data in the table GCG_5254_Report
+
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.Intrinsic.Control.CallSub(LoadGrid)
+F.Intrinsic.Control.CallSub(PopulateDropDown)
+GUI.FormSelectionScreen..Show
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.LoadGrid.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Set up the employee grid
+F.Data.DataTable.Create("tableSelectedEmployees", True)
+F.Data.DataTable.AddColumn("tableSelectedEmployees", "From", "String")
+F.Data.DataTable.AddColumn("tableSelectedEmployees", "To", "String")
+
+GUI.FormSelectionScreen.gridEmployeeRanges.AddGridviewFromDatatable("gridEmployees", "tableSelectedEmployees")
+
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "From", "HeaderFontBold", True)
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "From", "ReadOnly", True)
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "From", "AllowEdit", False)
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "From", "HeaderHAlignment", "Center")
+
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "To", "HeaderFontBold", True)
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "To", "ReadOnly", True)
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "To", "AllowEdit", False)
+GUI.FormSelectionScreen.gridEmployeeRanges.SetColumnProperty("gridEmployees", "To", "HeaderHAlignment", "Center")
+
+GUI.FormSelectionScreen.gridEmployeeRanges.MainView("gridEmployees")
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadGrid.End
+
+Program.Sub.PopulateDropDown.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'load the drop down to select statements
+GUI.FormSelectionScreen.dropdownStatement.AddItem("All Statements")
+F.Data.Dictionary.CreateFromSQL("dictionaryStatements", "Con", "select RTRIM(STATEMENT) as Statement, RTRIM(STATEMENT_NAME) as Name from GCG_5254_Statements")
+GUI.FormSelectionScreen.dropdownStatement.AddItems("Dictionary", "dictionaryStatements")
+F.Data.Dictionary.Close("dictionaryStatements")
+GUI.FormSelectionScreen.dropdownStatement.Text("All Statements")
+
+F.Data.DataTable.CreateFromSQL("tableStatements", "Con", "select RTRIM(STATEMENT) as Statement, RTRIM(STATEMENT_NAME) as Name from GCG_5254_Statements", True)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.PopulateDropDown.End
+
+Program.Sub.FormSelectionScreen_UnLoad.Start
+'Clean up and exit
+F.Data.DataTable.Close("tableSelectedEmployees")
+F.Data.DataTable.Close("tableStatements")
+F.Intrinsic.Control.End
+Program.Sub.FormSelectionScreen_UnLoad.End
+
+Program.Sub.buttonFromBrowser_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Open an employee browser, set the from field
+V.Local.sRet.Declare(String)
+F.Intrinsic.UI.Browser(50, "", V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Local.sRet, !=, "***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sRet, "*!*", V.Local.sRet)
+	GUI.FormSelectionScreen.textEmployeeFrom.Text(V.Local.sRet(1))
+	F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!textEmployeeTo.Text.Trim, =, "")
+		GUI.FormSelectionScreen.textEmployeeTo.Text(V.Local.sRet(1))
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonFromBrowser_Click.End
+
+Program.Sub.buttonToBrowser_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'open an employee browser, set the to field
+V.Local.sRet.Declare(String)
+F.Intrinsic.UI.Browser(50, "", V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Local.sRet, !=, "***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sRet, "*!*", V.Local.sRet)
+	GUI.FormSelectionScreen.textEmployeeTo.Text(V.Local.sRet(1))
+	F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!textEmployeeFrom.Text.Trim, =, "")
+		GUI.FormSelectionScreen.textEmployeeFrom.Text(V.Local.sRet(1))
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonToBrowser_Click.End
+
+Program.Sub.checkAllDates_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'toggle enabled controls when the "All Dates" check box is changed
+V.Local.bEnable.Declare(Boolean)
+V.Local.bEnable.Set(V.Screen.FormSelectionScreen!checkAllDates.Value)
+GUI.FormSelectionScreen.dateFrom.Enabled(V.Local.bEnable.Not)
+GUI.FormSelectionScreen.dateTo.Enabled(V.Local.bEnable.Not)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.checkAllDates_Click.End
+
+Program.Sub.checkAllEmployees_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'toggle enabled controls when the "All Employees" check box is changed
+V.Local.bEnable.Declare(Boolean)
+V.Local.bEnable.Set(V.Screen.FormSelectionScreen!checkAllEmployees.Value)
+GUI.FormSelectionScreen.buttonFromBrowser.Enabled(V.Local.bEnable.Not)
+GUI.FormSelectionScreen.buttonToBrowser.Enabled(V.Local.bEnable.Not)
+GUI.FormSelectionScreen.textEmployeeFrom.Enabled(V.Local.bEnable.Not)
+gui.FormSelectionScreen.textEmployeeTo.Enabled(V.Local.bEnable.Not)
+GUI.FormSelectionScreen.gridEmployeeRanges.Enabled(V.Local.bEnable.Not)
+GUI.FormSelectionScreen.buttonAdd.Enabled(V.Local.bEnable.Not)
+GUI.FormSelectionScreen.buttonRemove.Enabled(V.Local.bEnable.Not)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.checkAllEmployees_Click.End
+
+Program.Sub.buttonRemove_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Remove an item from the grid if there is one selected
+F.Intrinsic.Control.If(V.Global.bRowSelected)
+	V.Local.iRow.Declare(Long)
+	GUI.FormSelectionScreen.gridEmployeeRanges.GetSelectedRows("gridEmployees", V.Local.iRow)
+	F.Data.DataTable.DeleteRow("tableSelectedEmployees", V.Local.iRow)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonRemove_Click.End
+
+Program.Sub.buttonAdd_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'add an range to the employee grid
+F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!textEmployeeFrom.Text.Trim, !=, "", AND, V.Screen.FormSelectionScreen!textEmployeeTo.Text.Trim, !=, "")
+	F.Data.DataTable.AddRow("tableSelectedEmployees", "From", V.Screen.FormSelectionScreen!textEmployeeFrom.Text.Trim, "To", V.Screen.FormSelectionScreen!textEmployeeTo.Text.Trim)
+	GUI.FormSelectionScreen.textEmployeeFrom.Text("")
+	GUI.FormSelectionScreen.textEmployeeTo.Text("")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonAdd_Click.End
+
+Program.Sub.gridEmployeeRanges_RowCellClick.Start
+'now we know that there is a selected row
+V.Global.bRowSelected.Set(True)
+Program.Sub.gridEmployeeRanges_RowCellClick.End
+
+Program.Sub.buttonSubmit_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'check that a valid filter is chosen, load data, run report
+F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!checkAllEmployees.Value, !=, 1, and, V.DataTable.tableSelectedEmployees.RowCount, =, 0)
+	F.Intrinsic.UI.Msgbox("Error: No employees selected.")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+GUI.FormSelectionScreen..Visible(False)
+F.Intrinsic.Control.CallSub(LoadData)
+
+V.Local.iRet.Declare(Long)
+F.Global.BI.RunReportPreProcessor(V.Global.iBIRunID, V.Global.iBILogID, "BIRUN", V.Global.iBIRunID, "", -1, True, "", -1, "", -1, "", "", V.Local.iRet)
+
+V.Local.sSQL.Declare(String)
+F.Intrinsic.String.Build("delete from GCG_5254_Report where BIRUN = {0}", V.Global.iBIRunID, V.Local.sSQL)
+
+F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+F.ODBC.Connection!Con.Close
+
+F.Intrinsic.Control.CallSub(FormSelectionScreen_UnLoad)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonSubmit_Click.End
+
+Program.Sub.LoadData.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'set the filter, get the filtered data, put it in the BI table GCG_5254_Report
+F.Global.BI.GetRunID(V.Global.iBIRunID)
+
+F.Global.BI.StartLogging(V.Global.iBILogID, -1, -1, "", V.Global.iBILogID)
+
+V.Local.sFilter.Declare(String)
+	
+'First set the date filter
+F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!checkAllDates.Value, !=, 1)
+	V.Local.dStartDate.Declare(Date)
+	V.Local.dEndDate.Declare(Date)
+	V.Local.dStartDate.Set(V.Screen.FormSelectionScreen!dateFrom.Value)
+	V.Local.dEndDate.Set(V.Screen.FormSelectionScreen!dateTo.Value)
+	F.Intrinsic.String.Build("where Date >= '{0}' and DATE <= '{1}'", V.Local.dStartDate.FormatYYYY-MM-DD, V.Local.dEndDate.FormatYYYY-MM-DD, V.Local.sFilter)
+F.Intrinsic.Control.EndIf
+
+'Then set the employee filter
+'If all employees is not selected, need to get the selected employees, put them in a datatable that will be used to filter
+F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!checkAllEmployees.Value, !=, 1)
+	V.Local.iI.Declare(Long)
+	V.Local.iJ.Declare(Long)
+	V.Local.sStartTemp.Declare(String)
+	V.Local.sEndTemp.Declare(String)
+	V.Local.iStartTemp.Declare(Long)
+	V.Local.iEndTemp.Declare(Long)
+	V.Local.sSelect.Declare(String)
+	F.Data.DataTable.Create("tableFilterEmployees", True)
+	F.Data.DataTable.AddColumn("tableFilterEmployees", "Employee", "String")
+	F.Data.DataTable.CreateFromSQL("tableEmployees", "Con", "select Employee, Name from EMPLOYEE_MSTR Order by Employee", True)
+	
+	F.Intrinsic.Control.For(V.Local.iI, 0, V.DataTable.tableSelectedEmployees.RowCount--, 1)
+		V.Local.sStartTemp.Set(V.DataTable.tableSelectedEmployees(V.Local.iI).From!FieldValTrim)
+		V.Local.sEndTemp.Set(V.DataTable.tableSelectedEmployees(V.Local.iI).To!FieldValtrim)
+		
+		F.Intrinsic.Control.If(V.Local.sStartTemp, =, V.Local.sEndTemp)
+			'If they are the same, just one employee, add that one
+			F.Data.DataTable.AddRow("tableFilterEmployees", "Employee", V.DataTable.tableSelectedEmployees(V.Local.iI).From!FieldValTrim)
+		F.Intrinsic.Control.Else
+			'Else it is a range, need to add all employees in that range
+			
+			'Get index for employee start and end in the datatable
+			F.Intrinsic.String.Build("Name = '{0}'", V.Local.sStartTemp, V.Local.sSelect)
+			F.Data.DataTable.Select("tableEmployees", V.Local.sSelect, V.Local.iStartTemp)
+			
+			F.Intrinsic.String.Build("Name = '{0}'", V.Local.sEndTemp, V.Local.sSelect)
+			F.Data.DataTable.Select("tableEmployees", V.Local.sSelect, V.Local.iEndTemp)
+			
+			'Loop and add the proper employees to the table that will filter
+			F.Intrinsic.Control.For(V.Local.iJ, V.Local.iStartTemp, V.Local.iEndTemp, 1)
+			
+				F.Data.DataTable.AddRow("tableFilterEmployees", "Employee", V.DataTable.tableEmployees(V.Local.iJ).Name!FieldValTrim)
+			F.Intrinsic.Control.Next(V.Local.iJ)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iI)
+
+	F.Intrinsic.Control.If(V.DataTable.tableFilterEmployees.RowCount, !=, 0)
+		F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!checkAllDates.Value, !=, 1)
+			F.Intrinsic.String.Build("{0} and", V.Local.sFilter, V.Local.sFilter)
+		F.Intrinsic.Control.Else
+			V.Local.sFilter.Set("where ")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	
+	'Now actually create the filter using the datatable created above
+	F.Intrinsic.Control.For(V.Local.iI, 0, V.DataTable.tableFilterEmployees.RowCount--, 1)	
+		F.Intrinsic.Control.If(V.Local.iI, =, 0)
+			F.Intrinsic.String.Build("{0} Employee = '{1}'", V.Local.sFilter, V.DataTable.tableFilterEmployees(V.Local.iI).Employee!FieldValTrim, V.Local.sFilter)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("{0} or Employee = '{1}'", V.Local.sFilter, V.DataTable.tableFilterEmployees(V.Local.iI).Employee!FieldValTrim, V.Local.sFilter)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iI)
+	F.Data.DataTable.Close("tableFilterEmployees")
+	F.Data.DataTable.Close("tableEmployees")
+F.Intrinsic.Control.EndIf
+
+'Now set the statement filter
+V.Local.iIndex.Declare(Long)
+V.Local.sStatement.Declare(String)
+F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!dropdownStatement.Value.Trim, !=, "All Statements")
+	F.Intrinsic.String.Build("Name = '{0}'", V.Screen.FormSelectionScreen!dropdownStatement.Value.Trim, V.Local.sSelect)
+	F.Data.DataTable.Select("tableStatements", V.Local.sSelect, V.Local.iIndex)
+	V.Local.sStatement.Set(V.DataTable.tableStatements(V.Local.iIndex).Statement!FieldValTrim)
+	F.Intrinsic.Control.If(V.Screen.FormSelectionScreen!checkAllDates.Value, !=, 1, or, V.Screen.FormSelectionScreen!checkAllEmployees.Value, !=, 1)
+		F.Intrinsic.String.Build("{0} and Statement = '{1}'", V.Local.sFilter, V.Local.sStatement.PSQLFriendly, V.Local.sFilter)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("where Statement = '{0}'", V.Local.sStatement.PSQLFriendly, V.Local.sFilter)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+V.Local.sSQL.Declare(String)
+F.Intrinsic.String.Build("select * from GCG_5254_ClockIns {0}", V.Local.sFilter, V.Local.sSQL)
+
+F.Data.DataTable.CreateFromSQL("tableReport", "Con", V.Local.sSQL)
+F.Data.DataTable.AddColumn("tableReport", "BIRUN", "Long", V.Global.iBIRunID)
+F.Data.DataTable.RemoveColumn("tableReport", "ID")
+
+F.Intrinsic.Control.For(V.Local.iI, 0, V.DataTable.tableReport.RowCount--, 1)
+	F.Data.DataTable.SetValueFormat("tableReport", -1, "Time", "Time", "h:mm:ss AM/PM")	
+F.Intrinsic.Control.Next(V.Local.iI)
+
+F.Data.DataTable.SaveToDB("tableReport", "Con", "GCG_5254_Report", "BIRUN", 128)
+
+F.Data.DataTable.Close("tableReport")
+
+F.Global.BI.StopLogging(V.Global.iBILogID)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadData.End
