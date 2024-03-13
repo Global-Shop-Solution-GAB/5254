@@ -1,0 +1,317 @@
+Program.Sub.ScreenSU.Start
+Gui.FormStatementList..Create
+Gui.FormStatementList..Caption("Clock-In Statements")
+Gui.FormStatementList..Size(15135,10110)
+Gui.FormStatementList..MinX(0)
+Gui.FormStatementList..MinY(0)
+Gui.FormStatementList..Position(0,0)
+Gui.FormStatementList..BackColor(-2147483633)
+Gui.FormStatementList..MousePointer(0)
+Gui.FormStatementList..Event(UnLoad,FormStatementList_UnLoad)
+Gui.FormStatementList.GSGCStatements.Create(GsGridControl)
+Gui.FormStatementList.GSGCStatements.Size(15045,9405)
+Gui.FormStatementList.GSGCStatements.Position(0,510)
+Gui.FormStatementList.GSGCStatements.Anchor(15)
+Gui.FormStatementList.GSGCStatements.Event(RowClick,GSGCStatements_RowClick)
+Gui.FormStatementList.ButtonNew.Create(Button)
+Gui.FormStatementList.ButtonNew.Size(990,375)
+Gui.FormStatementList.ButtonNew.Position(105,90)
+Gui.FormStatementList.ButtonNew.Caption("New")
+Gui.FormStatementList.ButtonNew.Event(Click,ButtonNew_Click)
+Gui.FormStatementList.ButtonModify.Create(Button)
+Gui.FormStatementList.ButtonModify.Size(990,375)
+Gui.FormStatementList.ButtonModify.Position(1230,90)
+Gui.FormStatementList.ButtonModify.Caption("Modify")
+Gui.FormStatementList.ButtonModify.Event(Click,ButtonModify_Click)
+Gui.FormStatementList.ButtonDelete.Create(Button)
+Gui.FormStatementList.ButtonDelete.Size(990,375)
+Gui.FormStatementList.ButtonDelete.Position(13815,60)
+Gui.FormStatementList.ButtonDelete.Anchor(9)
+Gui.FormStatementList.ButtonDelete.Caption("Delete")
+Gui.FormStatementList.ButtonDelete.Event(Click,ButtonDelete_Click)
+Gui.FormStatementMaintenance..Create
+Gui.FormStatementMaintenance..Caption("Clock-In Statement Maintenance")
+Gui.FormStatementMaintenance..Size(8865,4620)
+Gui.FormStatementMaintenance..MinX(0)
+Gui.FormStatementMaintenance..MinY(0)
+Gui.FormStatementMaintenance..Position(0,0)
+Gui.FormStatementMaintenance..BackColor(-2147483633)
+Gui.FormStatementMaintenance..MousePointer(0)
+Gui.FormStatementMaintenance..AlwaysOnTop(True)
+Gui.FormStatementMaintenance..MaxButton(False)
+Gui.FormStatementMaintenance..MinButton(False)
+Gui.FormStatementMaintenance..Event(UnLoad,FormStatementMaintenance_UnLoad)
+Gui.FormStatementMaintenance..Sizeable(False)
+Gui.FormStatementMaintenance.labelName.Create(Label,"Name : ",True,615,255,0,60,120,True,0,"Arial",8,-2147483633,0)
+Gui.FormStatementMaintenance.textName.Create(TextBox,"",True,8565,300,0,105,330,True,0,"Arial",8,-2147483643,1)
+Gui.FormStatementMaintenance.textName.Anchor(13)
+Gui.FormStatementMaintenance.textName.MaxLength(100)
+Gui.FormStatementMaintenance.labelStatement.Create(Label,"Statement : ",True,960,255,0,60,720,True,0,"Arial",8,-2147483633,0)
+Gui.FormStatementMaintenance.textStatement.Create(TextboxM)
+Gui.FormStatementMaintenance.textStatement.Size(8565,2985)
+Gui.FormStatementMaintenance.textStatement.Position(105,930)
+Gui.FormStatementMaintenance.textStatement.MaxLength(500)
+Gui.FormStatementMaintenance.textStatement.Anchor(15)
+Gui.FormStatementMaintenance.buttonsave.Create(Button)
+Gui.FormStatementMaintenance.buttonsave.Size(990,375)
+Gui.FormStatementMaintenance.buttonsave.Position(7695,3930)
+Gui.FormStatementMaintenance.buttonsave.Caption("Save")
+Gui.FormStatementMaintenance.buttonsave.Event(Click,buttonsave_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.iRowSelected.Declare(Long, -1)
+V.Global.bNew.Declare(String)
+'V.Global.bActive.Declare(Boolean, True)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'GCG_5254_StatementMaintenance.g2u
+'Trey Seddon
+'9/27/2018
+'For Dyna Holdings LP.
+'Custom menu item
+'This is a maintenance program for the list of statements employees will have to acknowledge when clocking in
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.Intrinsic.Control.CallSub(LoadData)
+F.Intrinsic.Control.CallSub(LoadGrid)
+GUI.FormStatementList..Show
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.LoadData.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'if necessary, load the data
+F.Intrinsic.Control.If(V.DataTable.tableStatements.Exists)
+	F.Data.DataTable.Close(tableStatements)
+F.Intrinsic.Control.EndIf
+'F.Data.DataTable.CreateFromSQL("tableStatements", "Con", "select ID, RTRIM(STATEMENT_NAME) as Name, RTRIM(STATEMENT) as Statement, ACTIVE as Active from GCG_5254_Statements", True)
+F.Data.DataTable.CreateFromSQL("tableStatements", "Con", "select ID, RTRIM(STATEMENT_NAME) as Name, RTRIM(STATEMENT) as Statement from GCG_5254_Statements", True)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadData.End
+
+Program.Sub.LoadGrid.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'set up the grid
+GUI.FormStatementList.GSGCStatements.AddGridviewFromDataTable("gridStatements", "tableStatements")
+
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Name", "HeaderFontBold", True)
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Name", "ReadOnly", True)
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Name", "AllowEdit", False)
+
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Statement", "HeaderFontBold", True)
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Statement", "ReadOnly", True)
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Statement", "AllowEdit", False)
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Statement", "MinWidth", 150)
+
+'GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Active", "HeaderFontBold", True)
+'GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Active", "ReadOnly", True)
+'GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Active", "AllowEdit", False)
+'GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "Active", "MaxWidth", 80)
+
+GUI.FormStatementList.GSGCStatements.SetColumnProperty("gridStatements", "ID", "Visible", False)
+
+GUI.FormStatementList.GSGCStatements.MainView("gridStatements")
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadGrid.End
+
+Program.Sub.FormStatementList_UnLoad.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'close out
+F.Data.DataTable.Close("tableStatements")
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.FormStatementList_UnLoad.End
+
+Program.Sub.FormStatementMaintenance_UnLoad.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Go back to the main screen and do some cleanup
+GUI.FormStatementMaintenance..Visible(False)
+GUI.FormStatementList..AlwaysOnTop(True)
+GUI.FormStatementList..AlwaysOnTop(False)
+GUI.FormStatementList..Enabled(True)
+GUI.FormStatementMaintenance.checkActive.Value(True)
+'V.Global.bActive.Set(True)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.FormStatementMaintenance_UnLoad.End
+
+Program.Sub.buttonsave_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'if necessary, save the record
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sName.Declare(String)
+V.Local.sStatement.Declare(String)
+V.Local.sOldName.Declare(String)
+V.Local.bChanged.Declare(Boolean, False)
+V.Local.iID.Declare(Long)
+
+V.Local.sName.Set(V.Screen.FormStatementMaintenance!textName.Text.Trim)
+V.Local.sStatement.Set(V.Screen.FormStatementMaintenance!textStatement.Text.Trim)
+F.Intrinsic.Control.If(V.Global.iRowSelected, !=, -1)
+	V.Local.sOldName.Set(V.DataTable.tableStatements(V.Global.iRowSelected).Name!FieldValTrim)
+	V.Local.iID.Set(V.DataTable.tableStatements(V.Global.iRowSelected).ID!FieldValTrim)
+F.Intrinsic.Control.EndIf
+
+'If either field is blank, alert the user and do nothing
+F.Intrinsic.Control.If(V.Local.sName.PSQLFriendly, =, "", "OR", V.Local.sStatement.PSQLFriendly, =, "")
+	F.Intrinsic.UI.Msgbox("Error: The Name and Statement fields cannot be blank.")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+'If the name already exists, don't add it
+F.Intrinsic.String.Build("Name = '{0}'", V.Local.sName.PSQLFriendly, V.Local.sSQL)
+F.Data.DataTable.Select("tableStatements", V.Local.sSQL, V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet, !=, "***NORETURN***")
+	F.Intrinsic.Control.If(V.Global.iRowSelected, =, -1)
+		F.Intrinsic.UI.Msgbox("Error: A statement with this name already exists.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.ElseIf(V.Local.sName, !=, V.Local.sOldName)
+		F.Intrinsic.UI.Msgbox("Error: A statement with this name already exists.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+'If it's new, insert it, else update it
+F.Intrinsic.Control.If(V.Global.bNew)
+		'F.Intrinsic.String.Build("Insert into GCG_5254_Statements (STATEMENT_NAME, STATEMENT, DATE_CREATED, DATE_MODIFIED, USER_CREATED, USER_MODIFIED, ACTIVE) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')", V.Local.sName.PSQLFriendly, V.Local.sStatement.PSQLFriendly, V.Ambient.Date.FormatYYYYDDMM, V.Ambient.Date.FormatYYYYDDMM, V.Caller.User, V.Caller.User, V.Screen.FormStatementMaintenance!checkActive.Value, V.Local.sSQL)
+		F.Intrinsic.String.Build("Insert into GCG_5254_Statements (STATEMENT_NAME, STATEMENT, DATE_CREATED, DATE_MODIFIED, USER_CREATED, USER_MODIFIED) values ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')", V.Local.sName.PSQLFriendly, V.Local.sStatement.PSQLFriendly, V.Ambient.Date.FormatYYYYMMDD, V.Ambient.Date.FormatYYYYMMDD, V.Caller.User, V.Caller.User, V.Local.sSQL)
+		F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+		V.Local.bChanged.Set(True)
+F.Intrinsic.Control.Else
+
+		'Only save if something has been changed
+		'F.Intrinsic.Control.If(V.Local.sName, !=, V.Local.sOldName, "OR", V.Local.sStatement, !=, V.DataTable.tableStatements(V.Global.iRowSelected).Statement!FieldValtrim, V.Global.bActive, !=, V.DataTable.tableStatements(V.Global.iRowSelected).Active!FieldValTrim)
+			'F.Intrinsic.String.Build("Update GCG_5254_Statements set STATEMENT_NAME = '{0}', STATEMENT = '{1}', DATE_MODIFIED = '{2}', USER_MODIFIED = '{3}', ACTIVE = '{4}' where ID = {5}", V.Local.sName.PSQLFriendly, V.Local.sStatement.PSQLFriendly, V.Ambient.Date.FormatYYYYDDMM, V.Caller.User, V.Screen.FormStatementMaintenance!checkActive.Value, V.Local.iID, V.Local.sSQL)
+			
+		F.Intrinsic.Control.If(V.Local.sName, !=, V.Local.sOldName, "OR", V.Local.sStatement, !=, V.DataTable.tableStatements(V.Global.iRowSelected).Statement!FieldValtrim)
+			F.Intrinsic.String.Build("Update GCG_5254_Statements set STATEMENT_NAME = '{0}', STATEMENT = '{1}', DATE_MODIFIED = '{2}', USER_MODIFIED = '{3}' where ID = {4}", V.Local.sName.PSQLFriendly, V.Local.sStatement.PSQLFriendly, V.Ambient.Date.FormatYYYYMMDD, V.Caller.User, V.Local.iID, V.Local.sSQL)
+			F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+			V.Local.bChanged.Set(True)
+		F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+'if a change was made, refresh the data table
+F.Intrinsic.Control.If(V.Local.bChanged)
+	F.Intrinsic.Control.CallSub(LoadData)
+	F.Intrinsic.Control.CallSub(LoadGrid)
+	V.Global.iRowSelected.Set(-1)
+F.Intrinsic.Control.EndIf
+
+GUI.FormStatementMaintenance..Visible(False)
+F.Intrinsic.Control.CallSub(FormStatementMaintenance_UnLoad)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonsave_Click.End
+
+Program.Sub.ButtonNew_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'clear and open the statement maintenance screen
+GUI.FormStatementList..Enabled(False)
+GUI.FormStatementMaintenance.textName.Text("")
+GUI.FormStatementMaintenance.textStatement.Text("")
+V.Global.bNew.Set(True)
+GUI.FormStatementMaintenance.textName.SetFocus
+GUI.FormStatementMaintenance..Show
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.ButtonNew_Click.End
+
+Program.Sub.ButtonModify_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'if a row is selected, open that row in maintenance
+F.Intrinsic.Control.If(V.Global.iRoWSelected, !=, -1)
+	GUI.FormStatementMaintenance.textName.Text(V.DataTable.tableStatements(V.Global.iRowSelected).Name!FieldValTrim)
+	GUI.FormStatementMaintenance.textStatement.Text(V.DataTable.tableStatements(V.Global.iRowSelected).Statement!FieldValtrim)
+	V.Global.bNew.Set(False)
+	GUI.FormStatementMaintenance.textName.SetFocus
+	GUI.FormStatementMaintenance..Show
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.ButtonModify_Click.End
+
+Program.Sub.ButtonDelete_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'if a row is selected, delete it
+F.Intrinsic.Control.If(V.Global.iRoWSelected, !=, -1)
+	V.Local.sSQL.Declare(String)
+	F.Intrinsic.String.Build("Delete from GCG_5254_Statements where ID = {0}", V.DataTable.tableStatements(V.Global.iRowSelected).ID!FieldValTrim, V.Local.sSQL)
+	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+	F.Data.DataTable.DeleteRow("tableStatements", V.Global.iRowSelected)
+	V.Global.iRowSelected.Set(-1)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.ButtonDelete_Click.End
+
+Program.Sub.GSGCStatements_RowClick.Start
+'keeping track of the selected row, V.Args.RowIndex/Handle seems to use last one if you click one and drag
+GUI.FormStatementList.GSGCStatements.GetSelectedRows("gridStatements", V.Global.iRowSelected)
+Program.Sub.GSGCStatements_RowClick.End
+
+'Program.Sub.checkActive_Click.Start
+''Keeping track of active flag as boolean instead of checkbox 1 or 0 value
+'V.Global.bActive.Set(V.Global.bActive.Not)
+'Program.Sub.checkActive_Click.End
