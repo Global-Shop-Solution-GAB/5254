@@ -1,0 +1,286 @@
+Program.Sub.ScreenSU.Start
+Gui.FormSignOffSheet..Create
+Gui.FormSignOffSheet..Caption("Sign Off sheet")
+Gui.FormSignOffSheet..Size(10200,11010)
+Gui.FormSignOffSheet..MinX(0)
+Gui.FormSignOffSheet..MinY(0)
+Gui.FormSignOffSheet..Position(0,0)
+Gui.FormSignOffSheet..BackColor(-2147483633)
+Gui.FormSignOffSheet..MousePointer(0)
+Gui.FormSignOffSheet..ControlBox(False)
+Gui.FormSignOffSheet..MaxButton(False)
+Gui.FormSignOffSheet..MinButton(False)
+Gui.FormSignOffSheet..Sizeable(False)
+Gui.FormSignOffSheet..Event(UnLoad,FormSignOffSheet_UnLoad)
+Gui.FormSignOffSheet..AlwaysOnTop(True)
+Gui.FormSignOffSheet.gridStatements.Create(GsGridControl)
+Gui.FormSignOffSheet.gridStatements.Size(10125,9780)
+Gui.FormSignOffSheet.gridStatements.Position(0,450)
+Gui.FormSignOffSheet.gridStatements.Zorder(1)
+Gui.FormSignOffSheet.gridStatements.Event(RowCellClick,gridStatements_RowCellClick)
+Gui.FormSignOffSheet.buttonSubmit.Create(Button)
+Gui.FormSignOffSheet.buttonSubmit.Size(990,375)
+Gui.FormSignOffSheet.buttonSubmit.Position(4020,10275)
+Gui.FormSignOffSheet.buttonSubmit.Caption("Submit")
+Gui.FormSignOffSheet.buttonSubmit.Event(Click,buttonSubmit_Click)
+Gui.FormSignOffSheet.labelInfo.Create(Label,"All items must be acknowledged before continuing",True,3180,615,0,3435,-30,True,2,"Arial",10,-2147483633,0)
+Gui.FormSignOffSheet.buttonCancel.Create(Button)
+Gui.FormSignOffSheet.buttonCancel.Size(990,375)
+Gui.FormSignOffSheet.buttonCancel.Position(5235,10275)
+Gui.FormSignOffSheet.buttonCancel.Caption("Cancel")
+Gui.FormSignOffSheet.buttonCancel.Event(Click,buttonCancel_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.sEmployee.Declare(String)
+V.Global.sEmployeeID.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'GCG_5254_ClockInSignOff
+'Trey Seddon
+'9/28/2018
+'For Dyna Holdings
+'This is a program that will come up when an employee is clocking in,
+'They must acknowledge and sign off on the list of statements
+
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Hook 15921, GUI Clock in hook
+'009993	Employee Number
+'009994	Employee Name
+F.Intrinsic.Control.If(V.Caller.Hook, =, 15921)
+	V.Global.sEmployee.Set(V.Passed.009994)
+	V.Global.sEmployeeID.Set(V.Passed.009993)
+	
+	F.ODBC.Connection!Con.OpenCompanyConnection
+	F.Intrinsic.Control.CallSub(CheckIfAlreadyClockedIn)
+	F.Intrinsic.Control.CallSub(LoadData)
+	F.Intrinsic.Control.If(V.DataTable.tableStatements.RowCount, =, 0)
+		F.Intrinsic.Control.CallSub(FormSignOffSheet_UnLoad)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(LoadGrid)
+	GUI.FormSignOffSheet..Show
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.CheckIfAlreadyClockedIn.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'The hook fires even if the employee is already clocked in, so we check for that here
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+'F.Intrinsic.String.Build("select Employee from EMP_IN_PROCESS_G where Employee = '{0}'", V.Global.sEmployeeID, V.Local.sSQL)
+'changing this because this is a better way to tell if they're clocked in or not
+F.Intrinsic.String.Build("select EMPLOYEE from V_TIME_ATTENDANCE where EMPLOYEE = '{0}' and CHARGE_DATE = '{1}' and DATE_OUT = '1900-01-01'", V.Global.sEmployeeID, V.Ambient.Date.FormatYYYY-MM-DD, V.Local.sSQL)
+F.ODBC.Connection!Con.ExecuteAndReturn(V.Local.sSQL, V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF, !=, True)
+	F.Intrinsic.Control.CallSub(FormSignOffSheet_UnLoad)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.CheckIfAlreadyClockedIn.End
+
+Program.Sub.LoadData.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Load the statements from GCG_5254_Statements
+F.Data.DataTable.CreateFromSQL("tableStatements", "Con", "select ID, RTRIM(Statement_Name) as Statement_Name, RTRIM(Statement) as Statement from GCG_5254_Statements", True)
+F.Data.DataTable.AddColumn("tableStatements", "Yes", "Boolean", 0)
+F.Data.DataTable.AddColumn("tableStatements", "No", "Boolean", 0)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadData.End
+
+Program.Sub.LoadGrid.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Set all the grid properties and set the main view
+GUI.FormSignOffSheet.gridStatements.AddGridviewFromDatatable("gridViewStatements", "tableStatements")
+
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Yes", "Caption", "Yes - Work Permitted")
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Yes", "HeaderFontBold", True)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Yes", "Width", 30)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Yes", "HeaderHAlignment", "Center")
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Yes", "AllowEdit", False)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Yes", "ReadOnly", True)
+
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "No", "Caption", "No - See Your Supervisor")
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "No", "HeaderFontBold", True)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "No", "Width", 30)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "No", "HeaderHAlignment", "Center")
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "No", "AllowEdit", False)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "No", "ReadOnly", True)
+
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "ID", "Visible", False)
+
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Statement_Name", "Visible", False)
+
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Statement", "HeaderFontBold", True)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Statement", "AllowEdit", False)
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Statement", "ReadOnly", True)
+
+GUI.FormSignOffSheet.gridStatements.SetGridViewProperty("gridViewStatements", "OptionsViewRowAutoHeight", True)
+GUI.FormSignOffSheet.gridStatements.SetGridViewProperty("gridViewStatements", "AllowColumnMoving", False)
+GUI.FormSignOffSheet.gridStatements.SetGridViewProperty("gridViewStatements", "OptionsSelectionEnableAppearanceFocusedRow", False)
+GUI.FormSignOffSheet.gridStatements.SetGridViewProperty("gridViewStatements", "AllowSort", False)
+GUI.FormSignOffSheet.gridStatements.SetGridViewProperty("gridViewStatements", "AllowFilter", False)
+
+GUI.FormSignOffSheet.gridStatements.SetColumnProperty("gridViewStatements", "Statement", "CellWordWrap", "Wrap")
+
+GUI.FormSignOffSheet.gridStatements.MainView("gridViewStatements")
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.LoadGrid.End
+
+Program.Sub.FormSignOffSheet_UnLoad.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Clean up and exit
+F.Intrinsic.Control.If(V.DataTable.tableStatements.Exists)
+	F.Data.DataTable.Close("tableStatements")
+F.Intrinsic.Control.EndIf
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.FormSignOffSheet_UnLoad.End
+
+Program.Sub.buttonSubmit_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Check that everything is acknowledged
+V.Local.iCounter.Declare(Long)
+F.Data.DataTable.Create("tableNo", False)
+F.Data.DataTable.AddColumn("tableNo","Index", Long)
+F.Intrinsic.Control.For(V.Local.iCounter, 0, V.DataTable.tableStatements.RowCount--, 1)
+	F.Intrinsic.Control.If(V.DataTable.tableStatements(V.Local.iCounter).YES!FieldValTrim, =, False, "AND", V.DataTable.tableStatements(V.Local.iCounter).NO!FieldValTrim, =, False)
+		F.Intrinsic.UI.Msgbox("All items must be acknowledged before continuing")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	
+	'add to a list of items they responded no to
+	F.Intrinsic.Control.If(V.DataTable.tableStatements(V.Local.iCounter).No!FieldValTrim)
+		F.Data.DataTable.AddRow("tableNo", "Index", V.Local.iCounter)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCounter)
+
+'For anything they clicked No on, let them know to speak to their supervisor
+V.Local.sWarning.Declare(String)
+F.Intrinsic.Control.For(V.Local.iCounter, 0, V.DataTable.tableNo.RowCount--, 1)
+	F.Intrinsic.String.Build("You chose no on '{0}', please speak to your supervisor about this before continuing to work.", V.DataTable.tableStatements(V.DataTable.tableNo(V.Local.iCounter).Index!FieldValTrim).Statement!FieldValTrim, V.Local.sWarning)
+	F.Intrinsic.UI.Msgbox(V.Local.sWarning, "See Your Supervisor")
+F.Intrinsic.Control.Next(V.Local.iCounter)
+
+F.Data.DataTable.Close("tableNo")
+
+'store the data
+F.Intrinsic.Control.CallSub(StoreData)
+
+'exit
+GUI.FormSignOffSheet..Visible(False)
+F.Intrinsic.Control.CallSub(FormSignOffSheet_UnLoad)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonSubmit_Click.End
+
+Program.Sub.StoreData.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'Add the extra information that needs to be stored
+F.Data.DataTable.AddColumn("tableStatements", "Employee_ID", "String", V.Global.sEmployeeID)
+F.Data.DataTable.AddColumn("tableStatements", "Employee", "String", V.Global.sEmployee)
+F.Data.DataTable.AddColumn("tableStatements", "Date", "Date", V.Ambient.Date.FormatYYYY-MM-DD)
+F.Data.DataTable.AddColumn("tableStatements", "Time", "String", V.Ambient.Time)
+F.Data.DataTable.AddColumn("tableStatements", "User", "String", V.Caller.User)
+
+'Don't need this column, the flag is based off the Yes value
+F.Data.DataTable.RemoveColumn("tableStatements", "No")
+
+'Store the data
+F.Data.DataTable.SaveToDB("tableStatements", "Con", "GCG_5254_ClockIns", "Employee_ID*!*Employee*!*Statement*!*Yes*!*Date*!*Time*!*User", 128, "Employee_ID@!@Employee_ID*!*Employee@!@EMPLOYEE*!*Statement@!@Statement*!*Yes@!@Flag*!*Date@!@Date*!*Time@!@Time*!*User@!@User")
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.StoreData.End
+
+Program.Sub.gridStatements_RowCellClick.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'This is for toggling yes and no based on eachother, as doing it with cell value changed and an expression table depends on focus
+V.Local.bTemp.Declare(Boolean)
+V.Local.iSelectedRow.Declare(Long)
+GUI.FormSignOffSheet.gridStatements.GetSelectedRows("gridViewStatements", V.Local.iSelectedRow)
+
+F.Intrinsic.Control.If(V.Args.Column, =, "Yes")
+	V.Local.bTemp.Set(V.DataTable.tableStatements(V.Local.iSelectedRow).Yes!FieldValTrim)
+	F.Data.DataTable.SetValue("tableStatements", V.Local.iSelectedRow, "Yes", V.Local.bTemp.Not)
+	F.Data.DataTable.SetValue("tableStatements", V.Args.RowHandle, "No", V.Local.bTemp)
+F.Intrinsic.Control.ElseIf(V.Args.Column, =, "No")
+	V.Local.bTemp.Set(V.DataTable.tableStatements(V.Local.iSelectedRow).No!FieldValTrim)
+	F.Data.DataTable.SetValue("tableStatements", V.Local.iSelectedRow, "No", V.Local.bTemp.Not)
+	F.Data.DataTable.SetValue("tableStatements", V.Args.RowHandle, "Yes", V.Local.bTemp)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.gridStatements_RowCellClick.End
+
+Program.Sub.buttonCancel_Click.Start
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+
+'If they click cancel, exit and don't clock them in
+'777777	Hook Override
+V.Passed.777777.Set(1)
+F.Intrinsic.Control.CallSub(FormSignOffSheet_UnLoad)
+
+F.Intrinsic.Control.Catch
+    F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+    F.Intrinsic.UI.Msgbox(V.Local.sError)
+    F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.buttonCancel_Click.End
+
+
